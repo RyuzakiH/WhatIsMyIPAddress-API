@@ -23,5 +23,8 @@ var checkResults = await WhatIsMyIPAddress.ProxyCheckAsync(new WebProxy("139.59.
 var result = checkResults.IsProxyServer;
 ```
 
+# TODO
+* [Blacklist Check](https://whatismyipaddress.com/blacklist-check)
+
 # Dependencies
 * [HtmlAgilityPack](https://www.nuget.org/packages/HtmlAgilityPack)
