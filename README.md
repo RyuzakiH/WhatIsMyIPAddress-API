@@ -18,8 +18,8 @@ var result = checkResults.IsProxyServer;
 
 [Proxy Check](https://whatismyipaddress.com/proxy-check) Tool Async
 ```csharp
-// 2 is the maximum number of tries if request failed
-var checkResults = await WhatIsMyIPAddress.ProxyCheckAsync(new WebProxy("139.59.99.234", 8080), 20000, 2);
+// 2 is the maximum number of tries if request failed (number to try again times)
+var checkResults = await WhatIsMyIPAddress.ProxyCheckAsync(new WebProxy("139.59.99.234", 8080), 20000, 3);
 var result = checkResults.IsProxyServer;
 ```
 
