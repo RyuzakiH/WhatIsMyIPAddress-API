@@ -10,8 +10,10 @@ namespace Zero.WhatIsMyIPAddress
     public class WhatIsMyIPAddress
     {
         private const string USER_AGENT = "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36";
+        private const string BASE_URL = "https://whatismyipaddress.com";
         private const string LOOKUP_IP_URL = "http://whatismyipaddress.com/ip/{0}";
         private const string PROXY_CHECK_URL = "http://whatismyipaddress.com/proxy-check";
+        private const string BLACKLIST_CHECK_URL = "https://whatismyipaddress.com/blacklist-check";
 
         /// <summary>
         /// Provides details about an IP address
@@ -28,7 +30,7 @@ namespace Zero.WhatIsMyIPAddress
 
             var document = new HtmlDocument();
             document.LoadHtml(str);
-            
+
             var trElements = document.DocumentNode.Descendants("tr");
 
             var ipDetails = new IPDetails();
@@ -68,7 +70,7 @@ namespace Zero.WhatIsMyIPAddress
         private static string ExtractAttributeValue(IEnumerable<HtmlNode> attributesNodes, string name)
         {
             return attributesNodes.FirstOrDefault(tr => tr.FirstChild.InnerText == $"{name}:")?.Descendants("td").First().InnerText.Trim();
-        }        
+        }
 
 
         /// <summary>
@@ -112,7 +114,7 @@ namespace Zero.WhatIsMyIPAddress
         public static async Task<ProxyCheckResults> ProxyCheckAsync(WebProxy proxy, int timeout = 20000, int tries = 1)
         {
             var response = await Utilities.TryManyAsync(async () => await Utilities.GetAsync(PROXY_CHECK_URL, proxy, timeout), tries);
-            
+
             if (response == default(string))
                 throw new Exception("Proxy is not working or too slow.");
 
@@ -132,6 +134,79 @@ namespace Zero.WhatIsMyIPAddress
             };
         }
 
+
+        public static BlacklistResult BlacklistCheck(string address)
+        {
+            using (var client = new HttpClient())
+            {
+                client.Headers.Set("User-Agent", USER_AGENT);
+                client.DownloadString(BLACKLIST_CHECK_URL);
+
+                client.Headers.Set("User-Agent", USER_AGENT);
+                client.Headers.Set("Content-Type", "application/x-www-form-urlencoded");
+                client.Headers.Set("Referer", "https://whatismyipaddress.com/blacklist-check");
+
+                var response = client.UploadString(BLACKLIST_CHECK_URL, "POST", $"LOOKUPADDRESS={address}&Lookup+Hostname=Check+My+IP+Address");
+
+                var databases = ExtractDatabases(response);
+
+                var tasks = Enumerable.Range(0, databases.Count).Select((v, i) => new Task(async () => await CheckDatabase(databases[i])));
+
+                ParallelTasks.ExecuteParallelTasks(tasks, 4);
+
+                //Task.WhenAll(tasks).Wait();
+
+                return new BlacklistResult()
+                {
+                    Databases = databases
+                };
+            }
+        }
+
+        private static List<Database> ExtractDatabases(string sourceCode)
+        {
+            var document = new HtmlDocument();
+            document.LoadHtml(sourceCode);
+
+            return document.DocumentNode.Descendants("table").First().Descendants("td").Where(td => td.HasChildNodes)
+                .Select(td => new Database
+                {
+                    Name = td.LastChild.InnerText,
+                    Url = BASE_URL + WebUtility.HtmlDecode(td.Descendants("img").First().GetAttributeValue("src", null))
+                }).ToList();
+        }
+
+        private static async Task CheckDatabase(Database database)
+        {
+            using (var client = new HttpClient())
+            {
+                client.AllowAutoRedirect = false;
+                client.Headers.Set("Accept", "image/webp,image/apng,image/*,*/*;q=0.8");
+                client.Headers.Set("User-Agent", USER_AGENT);
+                client.Headers.Set("Referer", "https://whatismyipaddress.com/blacklist-check");
+                client.Headers.Set("Host", "whatismyipaddress.com");
+                //client.Headers.Add(HttpRequestHeader.Cookie, "fssts=false; fsbotchecked=true");
+
+                await client.DownloadStringTaskAsync(new Uri(database.Url));
+
+                var location = client.ResponseHeaders.GetValues("Location").FirstOrDefault();
+
+                if (location.Contains("green"))
+                    database.Value = DatabaseCheckResult.Good;
+                else if (location.Contains("red"))
+                    database.Value = DatabaseCheckResult.Bad;
+                else if (location.Contains("grey"))
+                    database.Value = DatabaseCheckResult.Offline;
+                else if (location.Contains("blue"))
+                    database.Value = DatabaseCheckResult.Timeout;
+            }
+        }
+
+
+        private HttpClient CreateHttpClient()
+        {
+            return new HttpClient();
+        }
 
     }
 }
