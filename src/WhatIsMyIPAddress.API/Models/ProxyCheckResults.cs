@@ -1,4 +1,4 @@
-﻿namespace Zero.WhatIsMyIPAddress
+﻿namespace WhatIsMyIPAddress.API.Models
 {
     public class ProxyCheckResults
     {

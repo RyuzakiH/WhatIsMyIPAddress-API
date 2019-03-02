@@ -1,24 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Zero.WhatIsMyIPAddress
+namespace WhatIsMyIPAddress.API.Models
 {
-    public enum DatabaseCheckResult
-    {
-        Good,
-        Bad,
-        Timeout,
-        Offline
-    }
-
-    public class Database
-    {
-        public string Name { get; set; }
-        public string Url { get; set; }
-        public DatabaseCheckResult Value { get; set; }
-
-    }
-
     public class BlacklistResult
     {
         public double GoodPercent

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Zero.WhatIsMyIPAddress
+namespace WhatIsMyIPAddress.API.Models
 {
     public class IPDetails
     {
