@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
+    <Description>Unofficial API for whatismyipaddress.com</Description>
+    <Authors>RyuzakiH</Authors>
+    <Company>Zero</Company>
+    <PackageProjectUrl>https://github.com/RyuzakiH/WhatIsMyIPAddress-API</PackageProjectUrl>
+    <PackageTags>api library whatismyipaddress whatismyipaddress.com HTTP ip2location IP geolocation proxy proxycheck blacklist</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
